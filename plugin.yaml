@@ -1,6 +1,6 @@
 name: web-kagi
-version: 1.0.0
-description: "Kagi web search + content extraction. Uses the Kagi v1 API (https://kagi.com/api/v1). Requires KAGI_API_KEY."
+version: 1.1.0
+description: "Kagi web search, content extraction, and enriched search. Uses the Kagi v1 API (https://kagi.com/api/v1). Requires KAGI_API_KEY."
 author: Samuel Proulx
 kind: backend
 provides_web_providers:

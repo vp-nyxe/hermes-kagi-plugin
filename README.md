@@ -1,13 +1,14 @@
 # hermes-kagi-plugin
 
-Kagi web search and content extraction for [Hermes Agent](https://hermes-agent.nousresearch.com/).
+Kagi web search, content extraction, and enriched search for [Hermes Agent](https://hermes-agent.nousresearch.com/).
 
 ## What it does
 
-Replaces the default `web_search` and `web_extract` backends with [Kagi](https://kagi.com) — the search engine that actually respects its users.
+Replaces the default `web_search` and `web_extract` backends with [Kagi](https://kagi.com) — the search engine that actually respects its users. Plus a bonus `kagi_enriched_search` tool that exposes Kagi's full enrichment data (infoboxes, adjacent questions, interesting finds, related searches, etc.).
 
 - **Search**: `web_search` routes through Kagi's v1 search API
 - **Extract**: URL content extraction via Kagi's v1 extract API (reads full page content as markdown)
+- **Enriched Search**: `kagi_enriched_search` returns the full Kagi response with all special categories
 - **No crawl support** — Kagi doesn't expose a crawl endpoint
 
 ## Why not the official Kagi MCP server?
@@ -48,8 +49,9 @@ Copy the files to `~/.hermes/plugins/web-kagi/`:
 ```
 web-kagi/
 ├── plugin.yaml      # manifest
-├── __init__.py      # registers the provider
-└── provider.py      # Kagi v1 API implementation
+├── __init__.py      # registers the provider + enriched search tool
+├── provider.py      # Kagi v1 API implementation (search + extract)
+└── tools.py         # kagi_enriched_search tool
 ```
 
 Set your API key:
@@ -73,6 +75,48 @@ web:
   extract_backend: "kagi"
 ```
 
+## Tools
+
+### `kagi_enriched_search`
+
+A dedicated tool that surfaces all the enrichment data Kagi returns — stuff the standard Hermes `web_search` contract strips out.
+
+**Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `query` | string | (required) | Search query |
+| `workflow` | string | `"search"` | Type of results: `search`, `images`, `videos`, `news`, `podcasts` |
+| `limit` | integer | `10` | Max results (1–100) |
+| `include_enrichment` | boolean | `true` | Include infoboxes, adjacent questions, interesting finds, related searches, direct answers |
+
+**Response structure:**
+
+```json
+{
+  "success": true,
+  "query": "best programming language 2025",
+  "workflow": "search",
+  "web_results": [...],
+  "images": [...],
+  "videos": [...],
+  "news": [...],
+  "infobox": [...],
+  "adjacent_questions": [...],
+  "direct_answers": [...],
+  "related_searches": [...],
+  "interesting_finds": [...],
+  "interesting_news": [...],
+  "listicles": [...],
+  "code_results": [...],
+  "package_tracking": [...],
+  "weather": [...],
+  "web_archive": [...]
+}
+```
+
+Only categories that actually have results are included. Empty categories are omitted.
+
 ## Environment
 
 | Variable | Required | Description |
@@ -84,7 +128,8 @@ web:
 | File | Purpose |
 |------|---------|
 | [`provider.py`](provider.py) | `KagiWebSearchProvider` — search + extract implementation |
-| [`__init__.py`](__init__.py) | Plugin entry point, registers with `ctx.register_web_search_provider()` |
+| [`tools.py`](tools.py) | `kagi_enriched_search` tool with full enrichment data |
+| [`__init__.py`](__init__.py) | Plugin entry point — registers provider + tool |
 | [`plugin.yaml`](plugin.yaml) | Hermes plugin manifest (`kind: backend`) |
 
 ## API coverage
@@ -92,17 +137,18 @@ web:
 | Endpoint | Hermes mapping | Status |
 |----------|---------------|--------|
 | `POST /api/v1/search` | `web_search` | ✅ Working |
+| `POST /api/v1/search` | `kagi_enriched_search` | ✅ Working |
 | `POST /api/v1/extract` | `web_extract` | ✅ Working |
-| `POST /api/v1/summarize` | — | ❌ Not implemented |
+| `POST /api/v0/summarize` | — | ❌ Not implemented (requires separate v0 key) |
 
 ## Known issues
 
 - Kagi's v1 search occasionally returns no results for broad queries; the plugin falls back through news → video → podcast → interesting finds → code categories when that happens.
-- No support for Kagi's "enrichment" features (summarization, discussion, etc.) — these could be added later if there's interest.
+- Summarization is not supported because Kagi's Summarizer API is v0-only and requires a separate API key scope.
 
 ## Credits
 
-Written by [Samuel Proulx](https://github.com/fastfinge), with help from [Nous](https://nousresearch.com/) — both of us wanted Kagi search that actually worked.
+Written by [Samuel Proulx](https://github.com/fastfinge), with help from [Nous](https://nousresearch.com/).
 
 ## License
 
