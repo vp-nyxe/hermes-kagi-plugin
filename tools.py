@@ -61,43 +61,46 @@ def _extract_category(data: Dict[str, Any], key: str) -> List[Dict[str, Any]]:
 
 
 KAGI_ENRICHED_SEARCH_SCHEMA: Dict[str, Any] = {
-    "type": "object",
+    "name": "kagi_enriched_search",
     "description": (
         "Perform a Kagi web search and return enriched results including "
         "infoboxes, adjacent questions, related searches, interesting finds, "
         "news, videos, images, and more. Uses the Kagi v1 API (requires KAGI_API_KEY)."
     ),
-    "properties": {
-        "query": {
-            "type": "string",
-            "description": "The search query to run.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "query": {
+                "type": "string",
+                "description": "The search query to run.",
+            },
+            "workflow": {
+                "type": "string",
+                "description": (
+                    "Type of results to return. Default is 'search' (web pages). "
+                    "Other options: 'images', 'videos', 'news', 'podcasts'."
+                ),
+                "enum": ["search", "images", "videos", "news", "podcasts"],
+                "default": "search",
+            },
+            "limit": {
+                "type": "integer",
+                "description": "Maximum number of results to return (1-100).",
+                "minimum": 1,
+                "maximum": 100,
+                "default": 10,
+            },
+            "include_enrichment": {
+                "type": "boolean",
+                "description": (
+                    "Whether to include enrichment data (infoboxes, adjacent questions, "
+                    "interesting finds, related searches, direct answers). Defaults to true."
+                ),
+                "default": True,
+            },
         },
-        "workflow": {
-            "type": "string",
-            "description": (
-                "Type of results to return. Default is 'search' (web pages). "
-                "Other options: 'images', 'videos', 'news', 'podcasts'."
-            ),
-            "enum": ["search", "images", "videos", "news", "podcasts"],
-            "default": "search",
-        },
-        "limit": {
-            "type": "integer",
-            "description": "Maximum number of results to return (1-100).",
-            "minimum": 1,
-            "maximum": 100,
-            "default": 10,
-        },
-        "include_enrichment": {
-            "type": "boolean",
-            "description": (
-                "Whether to include enrichment data (infoboxes, adjacent questions, "
-                "interesting finds, related searches, direct answers). Defaults to true."
-            ),
-            "default": True,
-        },
+        "required": ["query"],
     },
-    "required": ["query"],
 }
 
 
